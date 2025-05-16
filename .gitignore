@@ -1,0 +1,7 @@
+*.pyc
+__pycache__/
+.env
+node_modules/
+dist/
+.vscode/
+assets/temp/
