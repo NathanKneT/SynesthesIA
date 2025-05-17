@@ -6,6 +6,7 @@ import numpy as np
 import cv2
 import mediapipe as mp
 import time
+import sounddevice as sd
 from typing import Dict, Any, List, Optional, Union
 
 # Import custom modules
@@ -496,6 +497,12 @@ class BodyTracker:
         """
         gesture_type = gesture_info['type']
         gesture_name = gesture_info['name']
+
+        if self.show_debug:
+            debug_values = self.gesture_recognizer.get_debug_info()
+            debug_str = ", ".join([f"{k}: {v:.2f}" if isinstance(v, float) else f"{k}: {v}" 
+                                for k, v in debug_values.items()])
+            print(f"Gesture debug: {gesture_info['name']} - {debug_str}")
         
         # Ignore if it's the same gesture as before and cooldown is active
         if (self.last_gesture and self.last_gesture['name'] == gesture_name 
@@ -560,6 +567,31 @@ class BodyTracker:
             if not success:
                 self.add_to_log("OSC send failed", "error")
 
+            if self.audio_enabled:
+                self.process_audio(gesture_info)
+
+    def process_audio(self, gesture_info):
+        """Process audio for gesture separately from OSC"""
+        if not self.audio_enabled or not hasattr(self, 'audio_manager') or self.audio_manager is None:
+            return False
+            
+        try:
+            # Directement appeler audio_manager pour jouer le son
+            gesture_name = gesture_info.get('name')
+            parameters = gesture_info.get('parameters', {})
+            
+            # Pour les tap gestures, ajouter instrument sélectionné
+            if gesture_name in ["tap_left", "tap_right"]:
+                parameters['active_instrument'] = self.selected_instrument
+                
+            # Jouer le son via audio_manager
+            result = self.audio_manager.process_gesture(gesture_info)
+            if result:
+                self.add_to_log(f"Audio played: {gesture_name}", "success")
+            return result
+        except Exception as e:
+            self.add_to_log(f"Audio processing error: {str(e)}", "error")
+            return False
     def toggle_audio(self):
         """Enable or disable direct audio output"""
         try:
@@ -569,11 +601,13 @@ class BodyTracker:
                 self.audio_enabled = False
                 self.add_to_log("Audio output disabled", "info")
             else:
-                # Verify audio_manager is properly initialized
-                if not hasattr(self, 'audio_manager') or self.audio_manager is None:
-                    from audio.audio_manager import AudioManager
-                    self.audio_manager = AudioManager()
-                    
+                # Debug info
+                self.add_to_log(f"Audio packages: sounddevice={sd.__version__}, numpy={np.__version__}", "info")
+                
+                # Vérifier si le sounddevice est correctement configuré
+                devices = sd.query_devices()
+                self.add_to_log(f"Audio devices: {len(devices)} available", "info")
+                
                 # Enable audio
                 success = self.audio_manager.start()
                 self.audio_enabled = success
@@ -582,7 +616,6 @@ class BodyTracker:
                 else:
                     self.add_to_log("Failed to start audio output", "error")
         except Exception as e:
-            # Add try-except block to capture errors
             self.add_to_log(f"Audio error: {str(e)}", "error")
             import traceback
             traceback.print_exc()
@@ -751,6 +784,8 @@ class BodyTracker:
                     image = self.draw_osc_history(image)
                     image = self.draw_logs(image)
                     image = self.draw_help(image)
+                    self.add_to_log("Execute a calibration by pressing 'C'", "info")
+                    self.add_to_log("Keep a natural position during the calibration", "info")
                     
                     # Record frame if needed
                     if self.recording:
@@ -762,7 +797,7 @@ class BodyTracker:
                             self.add_to_log("Recording stopped (maximum length reached)", "warning")
                     
                     # Display image
-                    cv2.imshow('Body-Sound Vision', image)
+                    cv2.imshow('follow @nathanglhf on IG', image)
                     
                     # Handle keyboard input
                     key = cv2.waitKey(5) & 0xFF
