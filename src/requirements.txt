@@ -1,3 +1,10 @@
 mediapipe
 opencv-python==4.11.0.86
 numpy==2.0.2
+
+# Communication OSC
+python-osc>=1.8.0
+
+# Sound 
+sounddevice>=0.4.5
+scipy>=1.10.0 

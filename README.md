@@ -1,50 +1,118 @@
-# 🌀 SynesthesIA
+# SynesthesIA - Phase 1: Motion Tracking Prototype
 
-**A real-time gesture-to-visual-and-sound generator powered by Python, Blender, and AI.**  
-A creative coding project transforming full-body movements into programmable audiovisual expressions.
+**Real-time body gesture detection system**
 
----
+## Current Implementation Status (Phase 1)
 
-## ⚙️ Current Status — Stage 1: Real-Time Pose Detection & Gesture Recognition
+✅ **Core Functionality**
+- Real-time body tracking via MediaPipe
+- Basic gesture recognition (5 core gestures)
+- Camera calibration system
+- Event logging interface
 
-SynesthesIA currently captures full-body movement using a webcam, processes it via [MediaPipe Pose](https://github.com/google/mediapipe), and detects high-level body gestures using a custom `GestureRecognizer`. This forms the foundation for real-time interaction with 3D environments and audio synthesis.
+🛠️ **In Development**
+- OSC communication framework (partial)
+- Basic audio triggering (stub implementation)
+- Debug visualization tools
 
-### ✅ Implemented Features
+## System Architecture
 
-- **Live webcam capture**
-- **Pose estimation using MediaPipe**
-- **Custom gesture recognition system**, with:
-  - `power_up` (arms raised)
-  - `crossed_arms`
-  - `t_pose`
-- **Heads-Up Display (HUD):**
-  - Toggle gesture help overlay via `H`
-  - Toggle scrollable gesture event log via `F4` (disabled by default)
-- **Event log system** with timestamped gesture entries
-- **Modular architecture** for extending gesture logic or connecting to external systems (e.g., Blender, OSC, UDP)
+```
+src/
+├── main.py                # Entry point
+├── requirements.txt       # Dependencies
+│
+├───audio
+│   └── audio_manager.py   # Audio output stub
+│
+├───communication
+│   └── osc_manager.py     # OSC communication handler
+│
+├───tracking
+│   ├── body_tracker.py    # Main tracking logic
+│   └── gesture_recognition.py  # Gesture detection
+│
+└───visuals               # (Planned - currently in main)
+```
 
----
+## Detected Gestures (Phase 1)
 
-## 🧭 Roadmap
+| Gesture | Type | Detection Method |
+|---------|------|------------------|
+| Arms Raised | `POWER_UP` | Wrist-shoulder ratio |
+| Arms Crossed | `CROSSED_ARMS` | Wrist proximity |
+| T-Pose | `T_POSE` | Arm extension ratio |
+| Left Arm Tap | `TAP_LEFT` | Velocity + proximity |
+| Right Arm Tap | `TAP_RIGHT` | Velocity + proximity |
 
-| Stage | Description |
-|-------|-------------|
-| **1. Tracking Core** | Real-time gesture detection pipeline using Python and MediaPipe ✅ |
-| **2. Blender Integration** | Stream gestures via UDP to a custom Blender scene |
-| **3. Audiovisual Mapping** | Map gestures to shaders + generative audio |
-| **4. Artistic Reveal** | Polish visuals, add cinematic camera, stage a full live-coded experience |
+## Installation
 
----
+1. Clone repository:
+```bash
+git clone https://github.com/NathanKneT/SynesthesIA.git
+cd SynesthesIA
+```
 
-## 🛠️ Setup
-
-### Requirements
-
-- Python 3.9+
-- `opencv-python`
-- `mediapipe`
-
-Install dependencies:
-
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+## Running the System
+
+Basic operation:
+```bash
+python src/main.py
+```
+
+## Keyboard Controls
+
+| Key | Function |
+|-----|----------|
+| `H` | Toggle help display |
+| `L` | Show event log |
+| `D` | Toggle debug info |
+| `C` | Start calibration |
+| `ESC` | Quit application |
+
+## Technical Details
+
+**Body Tracking:**
+- Uses MediaPipe Pose with complexity level 1
+- Processes at 30 FPS on 720p input
+- Adaptive thresholds based on user calibration
+
+**Gesture Recognition:**
+```python
+# Sample detection logic
+def detect_power_up(landmarks):
+    left_raised = landmarks[LEFT_WRIST].y < landmarks[LEFT_SHOULDER].y - threshold
+    right_raised = landmarks[RIGHT_WRIST].y < landmarks[RIGHT_SHOULDER].y - threshold
+    return left_raised and right_raised
+```
+
+## Next Steps (Phase 2 Preview)
+
+Planned features for audio integration:
+- OSC audio triggering framework
+- Basic sound synthesis engine
+- Instrument mapping system
+
+## Troubleshooting
+
+**Common Issues:**
+- **Camera not detected**: Try different camera indices (0, 1, 2)
+- **High CPU usage**: Reduce camera resolution in `body_tracker.py`
+- **False detections**: Run calibration (`C` key) in neutral position
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+
+## Dependencies
+
+- [MediaPipe](https://google.github.io/mediapipe/) pour la détection de pose
+- [OpenCV](https://opencv.org/) pour le traitement d'image
+- [python-osc](https://github.com/attwad/python-osc) pour la communication OSC
+- [sounddevice](https://python-sounddevice.readthedocs.io/) pour la génération audio
